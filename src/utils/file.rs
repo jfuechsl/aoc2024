@@ -24,3 +24,22 @@ where
 
     Ok(contents)
 }
+
+pub fn read_file_to_grid<P>(filename: P) -> io::Result<Vec<Vec<char>>>
+where
+    P: AsRef<Path>,
+{
+    let file = File::open(filename)?;
+    let buf_reader = io::BufReader::new(file);
+    let mut grid = Vec::new();
+
+    for line in buf_reader.lines() {
+        let mut row = Vec::new();
+        for ch in line?.chars() {
+            row.push(ch);
+        }
+        grid.push(row);
+    }
+
+    Ok(grid)
+}
