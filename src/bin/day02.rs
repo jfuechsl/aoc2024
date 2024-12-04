@@ -1,15 +1,4 @@
-use std::{
-    fs::File,
-    io::{self, BufRead},
-    path::Path,
-};
-
-fn load_file_lines(filename: &str) -> io::Result<Vec<String>> {
-    let path = Path::new(filename);
-    let file = File::open(&path)?;
-    let reader = io::BufReader::new(file);
-    reader.lines().collect()
-}
+use aoc2024::utils::file::load_file_lines;
 
 fn parse_integers(input: &str) -> Option<Vec<i32>> {
     input

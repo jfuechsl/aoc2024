@@ -1,23 +1,5 @@
+use aoc2024::utils::file::read_lines;
 use regex::Regex;
-use std::fs::File;
-use std::io::{self, BufRead};
-use std::path::Path;
-
-fn read_lines<P>(filename: P) -> io::Result<String>
-where
-    P: AsRef<Path>,
-{
-    let file = File::open(filename)?;
-    let buf_reader = io::BufReader::new(file);
-    let mut contents = String::new();
-
-    for line in buf_reader.lines() {
-        contents.push_str(&line?);
-        contents.push('\n');
-    }
-
-    Ok(contents)
-}
 
 enum Instr {
     Mul(i32, i32),
