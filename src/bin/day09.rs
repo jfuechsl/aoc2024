@@ -1,4 +1,8 @@
-use std::{cmp::max, cmp::min, vec};
+use std::{
+    cmp::{max, min},
+    collections::BTreeMap,
+    vec,
+};
 
 use aoc2024::utils::file::read_lines;
 
@@ -91,6 +95,7 @@ impl Disk {
         }
     }
 
+    #[allow(dead_code)]
     fn compact_files(&mut self) {
         let mut cur_file_id = self.iter_files().rev().next().unwrap().2;
         loop {
@@ -124,6 +129,70 @@ impl Disk {
             }
             if cur_file_id == 0 {
                 break;
+            }
+        }
+    }
+
+    fn compact_files2(&mut self) {
+        let mut free_blocks: BTreeMap<usize, BTreeMap<usize, usize>> = BTreeMap::new();
+        for (start, end) in self.iter_empty() {
+            let len = end - start;
+            for s in 1..=len {
+                free_blocks
+                    .entry(s)
+                    .or_insert_with(BTreeMap::new)
+                    .insert(start, len);
+            }
+        }
+        let file_positions = self.iter_files().rev().collect::<Vec<_>>();
+        for (fstart, fend, _fid) in file_positions {
+            let flen = fend - fstart;
+            assert!(flen > 0 && flen <= 9);
+            let remove_empty = match free_blocks.get(&flen) {
+                Some(free_blocks) => match free_blocks.first_key_value() {
+                    Some((estart, elen)) => {
+                        if fstart > *estart {
+                            self.swap_block_ranges(*estart, fstart, flen);
+                            Some((*estart, *elen, flen, fstart))
+                        } else {
+                            None
+                        }
+                    }
+                    None => None,
+                },
+                None => None,
+            };
+            if let Some((estart, elen, flen, fstart)) = remove_empty {
+                let new_estart = estart + flen;
+                let new_elen = elen - flen;
+                // Remove the old empty block
+                for s in 1..=elen {
+                    free_blocks
+                        .entry(s)
+                        .or_insert_with(BTreeMap::new)
+                        .remove(&estart);
+                }
+                // Add the new empty block
+                for s in 1..=new_elen {
+                    free_blocks
+                        .entry(s)
+                        .or_insert_with(BTreeMap::new)
+                        .insert(new_estart, new_elen);
+                }
+                // Add new empty blocks where the file used to be
+                // Get the potential empty block after (to be merged)
+                let next_empty_start = fstart + flen;
+                let next_empty_len = *free_blocks
+                    .get(&1)
+                    .and_then(|x| x.get(&next_empty_start))
+                    .unwrap_or(&0);
+                let new_empty_len = flen + next_empty_len;
+                for s in 1..=new_empty_len {
+                    free_blocks
+                        .entry(s)
+                        .or_insert_with(BTreeMap::new)
+                        .insert(fstart, new_empty_len);
+                }
             }
         }
     }
@@ -219,11 +288,14 @@ fn main() {
     let mut disk = Disk::from_layout_string(&disk_layout);
     disk.compact_blocks();
     let checksum = disk.checksum();
+    assert_eq!(checksum, 6607511583593);
     println!("Checksum (Block compaction): {}", checksum);
 
     // Part 2
     let mut disk = Disk::from_layout_string(&disk_layout);
-    disk.compact_files();
+    // disk.compact_files();
+    disk.compact_files2();
     let checksum = disk.checksum();
+    assert_eq!(checksum, 6636608781232);
     println!("Checksum (File compaction): {}", checksum);
 }
