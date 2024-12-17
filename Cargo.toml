@@ -9,4 +9,5 @@ path = "src/lib.rs"
 
 [dependencies]
 good_lp = "1.10.0"
+itertools = "0.13.0"
 regex = "1.11.1"
